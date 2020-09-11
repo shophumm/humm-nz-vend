@@ -13,10 +13,10 @@ import (
 	"testing"
 
 	uuid "github.com/nu7hatch/gouuid"
-	"github.com/oxipay/oxipay-vend/internal/pkg/config"
-	"github.com/oxipay/oxipay-vend/internal/pkg/oxipay"
-	"github.com/oxipay/oxipay-vend/internal/pkg/terminal"
-	"github.com/oxipay/oxipay-vend/internal/pkg/vend"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/config"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/humm"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/terminal"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/vend"
 
 	shortid "github.com/ventu-io/go-shortid"
 )
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 
 	terminal.Db = Db
 
-	// oxipay.GatewayURL = "https://testpos.oxipay.com.au/webapi/v1/Test"
+	// humm.GatewayURL = "https://testpos.humm.com.au/webapi/v1/Test"
 
 	returnCode := m.Run()
 
@@ -72,7 +72,7 @@ func TestTerminalUniqueSave(t *testing.T) {
 		FxlDeviceSigningKey: "VK5NGgc7nFJp",
 		FxlRegisterID:       "Oxipos",
 		FxlSellerID:         "30188105",
-		Origin:              "http://pos.oxipay.com.au",
+		Origin:              "http://pos.humm.com.au",
 		VendRegisterID:      "0d33b6af-7d33-4913-a310-7cd187ad4756",
 	}
 	// insert the same record twice so that we know it's erroring
@@ -85,7 +85,7 @@ func TestTerminalUniqueSave(t *testing.T) {
 	}
 }
 
-// TestRegisterHandler  generating oxipay payload
+// TestRegisterHandler  generating humm payload
 
 func TestRegisterHandler(t *testing.T) {
 
@@ -105,11 +105,11 @@ func TestRegisterHandler(t *testing.T) {
 	guid, _ := uuid.NewV4()
 	vReq := &vend.PaymentRequest{
 		RegisterID: guid.String(),
-		Origin:     "http://testpos.oxipay.com.au",
+		Origin:     "http://testpos.humm.com.au",
 	}
 	rr := httptest.NewRecorder()
 
-	session, err := getSession(req, "oxipay")
+	session, err := getSession(req, "humm")
 
 	session.Values["vReq"] = vReq
 	err = session.Save(req, rr)
@@ -132,8 +132,8 @@ func TestRegisterHandler(t *testing.T) {
 	}
 }
 
-// TestGeneratePayload generating oxipay payload assumes a registered device
-// with both Oxipay and the local database
+// TestGeneratePayload generating humm payload assumes a registered device
+// with both Humm and the local database
 func TestProcessAuthorisationHandler(t *testing.T) {
 
 	var uniqueID, _ = uuid.NewV4()
@@ -203,7 +203,7 @@ func TestProcessAuthorisationRedirect(t *testing.T) {
 	// pass 'nil' as the third parameter.
 	form := url.Values{}
 	form.Add("amount", "4400")
-	form.Add("origin", "http://nonexistent.oxipay.com.au")
+	form.Add("origin", "http://nonexistent.humm.com.au")
 	form.Add("paymentcode", "012344")
 	form.Add("register_id", uniqueID.String())
 
@@ -255,7 +255,7 @@ func TestProcessSalesAdjustmentHandler(t *testing.T) {
 	form.Add("purchasenumber", "01APPROV") // needs a real payment code to succeed against sandbox / prod
 
 	req, err := http.NewRequest(http.MethodPost, "/refund", strings.NewReader(form.Encode()))
-	session, err := getSession(req, "oxipay")
+	session, err := getSession(req, "humm")
 
 	if err != nil {
 		t.Error("Can't get the session")
@@ -302,17 +302,17 @@ func TestProcessAuthorisationResponse(t *testing.T) {
 
 	reponse := `{"x_purchase_number":"52011913","x_status":"Success","x_code":"SPRA01","x_message":"Approved","signature":"3b715be8fdd67decd299cbb14ceeec3c76667d48e3468e4d3f343602d9b7d690","tracking_data":null}`
 
-	oxipayResponse := new(oxipay.OxipayResponse)
-	err = json.Unmarshal([]byte(reponse), oxipayResponse)
+	hummResponse := new(humm.HummResponse)
+	err = json.Unmarshal([]byte(reponse), hummResponse)
 	if err != nil {
 		t.Error(err)
 	}
-	isValid := oxipayResponse.Authenticate(terminal.FxlDeviceSigningKey)
+	isValid := hummResponse.Authenticate(terminal.FxlDeviceSigningKey)
 
 	if isValid == false {
 		t.Error("Not a valid request")
 	}
-	browserResponse := processOxipayResponse(oxipayResponse, oxipay.Authorisation, "4000")
+	browserResponse := processHummResponse(hummResponse, humm.Authorisation, "4000")
 
 	if browserResponse.Status != statusAccepted {
 		t.Error("Expecting for the transaction to be accepted")
@@ -329,17 +329,17 @@ func TestRegistrationResponse(t *testing.T) {
 		"tracking_data": null
 	 }`
 
-	oxipayResponse := new(oxipay.OxipayResponse)
-	err := json.Unmarshal([]byte(rawResponse), oxipayResponse)
+	hummResponse := new(humm.HummResponse)
+	err := json.Unmarshal([]byte(rawResponse), hummResponse)
 	if err != nil {
 		t.Error(err)
 	}
-	isValid := oxipayResponse.Authenticate("Voh4ig3eepeedai8")
+	isValid := hummResponse.Authenticate("Voh4ig3eepeedai8")
 
 	if isValid == false {
 		t.Error("Not a valid request")
 	}
-	browserResponse := processOxipayResponse(oxipayResponse, oxipay.Registration, "4000")
+	browserResponse := processHummResponse(hummResponse, humm.Registration, "4000")
 
 	if browserResponse.Status != statusAccepted {
 		t.Error("Expecting for the transaction to be accepted")
@@ -350,7 +350,7 @@ func TestRegistrationResponse(t *testing.T) {
 func TestGeneratePayload(t *testing.T) {
 
 	log.Print("hello")
-	oxipayPayload := oxipay.OxipayPayload{
+	hummPayload := humm.HummPayload{
 		DeviceID:        "foobar",
 		MerchantID:      "3342342",
 		FinanceAmount:   "1000",
@@ -360,10 +360,10 @@ func TestGeneratePayload(t *testing.T) {
 		PreApprovalCode: "1234",
 	}
 
-	var plainText = oxipay.GeneratePlainTextSignature(oxipayPayload)
+	var plainText = humm.GeneratePlainTextSignature(hummPayload)
 	t.Log("Plaintext", plainText)
 
-	signature := oxipay.SignMessage(plainText, "TEST")
+	signature := humm.SignMessage(plainText, "TEST")
 	correctSig := "7dfd655530d41cee284b3e4cb7d08a058edf7b5641dffd15fdf1b61ff6a8699b"
 
 	if signature != correctSig {

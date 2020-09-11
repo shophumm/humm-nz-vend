@@ -7,7 +7,7 @@ import (
 
 // Terminal terminal mapping
 type Register struct {
-	FxlRegisterID       string // Oxipay registerid
+	FxlRegisterID       string // Humm registerid
 	FxlSellerID         string
 	FxlDeviceSigningKey string
 	Origin              string
@@ -34,7 +34,7 @@ func NewRegister(key string, deviceID string, merchantID string, origin string, 
 	return &Register{
 		FxlDeviceSigningKey: key,
 		FxlRegisterID:       deviceID,
-		FxlSellerID:         merchantID, // Oxipay Merchant No
+		FxlSellerID:         merchantID, // Humm Merchant No
 		Origin:              origin,     // Vend Website
 		VendRegisterID:      registerID, // Vend Register ID
 	}
@@ -43,7 +43,7 @@ func NewRegister(key string, deviceID string, merchantID string, origin string, 
 //Save will save the terminal to the database
 func (t Terminal) Save(user string, register *Register) (bool, error) {
 	query := `INSERT INTO 
-		oxipay_vend_map  
+		humm_vend_map  
 		(
 			fxl_register_id,
 			fxl_seller_id,
@@ -87,7 +87,7 @@ func (t Terminal) GetRegister(originDomain string, vendRegisterID string) (*Regi
 			 origin_domain,
 			 vend_register_id
 			FROM 
-				oxipay_vend_map 
+				humm_vend_map 
 			WHERE 
 				origin_domain = ? 
 			AND

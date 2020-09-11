@@ -19,10 +19,10 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
-	"github.com/oxipay/oxipay-vend/internal/pkg/config"
-	"github.com/oxipay/oxipay-vend/internal/pkg/oxipay"
-	"github.com/oxipay/oxipay-vend/internal/pkg/terminal"
-	"github.com/oxipay/oxipay-vend/internal/pkg/vend"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/config"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/humm"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/terminal"
+	"github.com/shophumm/humm-nz-vend/internal/pkg/vend"
 	logrus "github.com/sirupsen/logrus"
 	"github.com/srinathgs/mysqlstore"
 	shortid "github.com/ventu-io/go-shortid"
@@ -59,7 +59,7 @@ var log *logrus.Logger
 
 var appConfig *config.HostConfig
 
-var oxipayClient oxipay.Client
+var hummClient humm.Client
 
 var db *sql.DB
 
@@ -94,10 +94,10 @@ func main() {
 
 	DbSessionStore = initSessionStore(db, appConfig.Session)
 
-	// create a reference to the Oxipay Client
-	oxipayClient = oxipay.NewOxipay(
-		appConfig.Oxipay.GatewayURL,
-		appConfig.Oxipay.Version,
+	// create a reference to the Humm Client
+	hummClient = humm.NewHumm(
+		appConfig.Humm.GatewayURL,
+		appConfig.Humm.Version,
 		log,
 	)
 
@@ -216,7 +216,7 @@ func getPaymentRequestFromSession(r *http.Request) (*vend.PaymentRequest, error)
 	var session *sessions.Session
 
 	vendPaymentRequest := &vend.PaymentRequest{}
-	session, err = getSession(r, "oxipay")
+	session, err = getSession(r, "humm")
 	if err != nil {
 		log.Println(err.Error())
 		_ = session
@@ -255,7 +255,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 
-		// Bind the request from the browser to an Oxipay Registration Payload
+		// Bind the request from the browser to an Humm Registration Payload
 		registrationPayload, err := bindToRegistrationPayload(r)
 
 		if err != nil {
@@ -276,10 +276,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 
 			// sign the message
-			registrationPayload.Signature = oxipay.SignMessage(oxipay.GeneratePlainTextSignature(registrationPayload), registrationPayload.DeviceToken)
+			registrationPayload.Signature = humm.SignMessage(humm.GeneratePlainTextSignature(registrationPayload), registrationPayload.DeviceToken)
 
-			// submit to oxipay
-			response, err := oxipayClient.RegisterPosDevice(registrationPayload)
+			// submit to humm
+			response, err := hummClient.RegisterPosDevice(registrationPayload)
 
 			if err != nil {
 				log.Error(err)
@@ -287,16 +287,16 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 				browserResponse.HTTPStatus = http.StatusBadGateway
 			}
 
-			// ensure the response came from Oxipay
+			// ensure the response came from Humm
 			signedResponse, err := response.Authenticate(registrationPayload.DeviceToken)
 			if !signedResponse || err != nil {
-				browserResponse.Message = "The signature returned from Oxipay does not match the expected signature"
+				browserResponse.Message = "The signature returned from Humm does not match the expected signature"
 				browserResponse.HTTPStatus = http.StatusBadRequest
 			} else {
 				// process the response
-				browserResponse = processOxipayResponse(response, oxipay.Registration, "")
+				browserResponse = processHummResponse(response, humm.Registration, "")
 				if browserResponse.Status == statusAccepted {
-					log.Info("Device Successfully Registered in Oxipay")
+					log.Info("Device Successfully Registered in Humm")
 
 					register := terminal.NewRegister(
 						response.Key,
@@ -332,7 +332,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func processOxipayResponse(oxipayResponse *oxipay.Response, responseType oxipay.ResponseType, amount string) *Response {
+func processHummResponse(hummResponse *humm.Response, responseType humm.ResponseType, amount string) *Response {
 
 	// Specify an external transaction ID. This value can be sent back to Vend with
 	// the "ACCEPT" step as the JSON key "transaction_id".
@@ -342,52 +342,52 @@ func processOxipayResponse(oxipayResponse *oxipay.Response, responseType oxipay.
 	// register that originally sent the payment.
 	response := &Response{}
 
-	var oxipayResponseCode *oxipay.ResponseCode
+	var hummResponseCode *humm.ResponseCode
 	switch responseType {
-	case oxipay.Authorisation:
-		oxipayResponseCode = oxipay.ProcessAuthorisationResponses()(oxipayResponse.Code)
-	case oxipay.Adjustment:
-		oxipayResponseCode = oxipay.ProcessSalesAdjustmentResponse()(oxipayResponse.Code)
-	case oxipay.Registration:
-		oxipayResponseCode = oxipay.ProcessRegistrationResponse()(oxipayResponse.Code)
+	case humm.Authorisation:
+		hummResponseCode = humm.ProcessAuthorisationResponses()(hummResponse.Code)
+	case humm.Adjustment:
+		hummResponseCode = humm.ProcessSalesAdjustmentResponse()(hummResponse.Code)
+	case humm.Registration:
+		hummResponseCode = humm.ProcessRegistrationResponse()(hummResponse.Code)
 	}
 
-	if oxipayResponseCode == nil || oxipayResponseCode.TxnStatus == "" {
+	if hummResponseCode == nil || hummResponseCode.TxnStatus == "" {
 
-		response.Message = "Unable to estabilish communication with Oxipay"
+		response.Message = "Unable to estabilish communication with Humm"
 		response.HTTPStatus = http.StatusBadRequest
 		return response
 	}
 
-	switch oxipayResponseCode.TxnStatus {
-	case oxipay.StatusApproved:
-		log.Infof("Status: %f", oxipayResponseCode.LogMessage)
+	switch hummResponseCode.TxnStatus {
+	case humm.StatusApproved:
+		log.Infof("Status: %f", hummResponseCode.LogMessage)
 		response.Amount = amount
-		response.ID = oxipayResponse.PurchaseNumber
+		response.ID = hummResponse.PurchaseNumber
 		response.Status = statusAccepted
 		response.HTTPStatus = http.StatusOK
-		response.Message = oxipayResponseCode.CustomerMessage
-	case oxipay.StatusDeclined:
+		response.Message = hummResponseCode.CustomerMessage
+	case humm.StatusDeclined:
 		response.HTTPStatus = http.StatusOK
 		response.ID = ""
 		response.Status = statusDeclined
-		response.Message = oxipayResponseCode.CustomerMessage
-	case oxipay.StatusFailed:
+		response.Message = hummResponseCode.CustomerMessage
+	case humm.StatusFailed:
 		response.HTTPStatus = http.StatusOK
 		response.ID = ""
 		response.Status = statusFailed
-		response.Message = oxipayResponseCode.CustomerMessage
+		response.Message = hummResponseCode.CustomerMessage
 	default:
 		// default to fail...not sure if this is right
 		response.HTTPStatus = http.StatusOK
 		response.ID = ""
 		response.Status = statusFailed
-		response.Message = oxipayResponseCode.CustomerMessage
+		response.Message = hummResponseCode.CustomerMessage
 	}
 	return response
 }
 
-func bindToRegistrationPayload(r *http.Request) (*oxipay.RegistrationPayload, error) {
+func bindToRegistrationPayload(r *http.Request) (*humm.RegistrationPayload, error) {
 
 	if err := r.ParseForm(); err != nil {
 		log.Errorf("Unable to bind registration payload: %s", err)
@@ -398,12 +398,12 @@ func bindToRegistrationPayload(r *http.Request) (*oxipay.RegistrationPayload, er
 	merchantID := r.Form.Get("MerchantID")
 	FxlDeviceID := deviceToken + "-" + uniqueID
 
-	register := &oxipay.RegistrationPayload{
+	register := &humm.RegistrationPayload{
 		MerchantID:      merchantID,
 		DeviceID:        FxlDeviceID,
 		DeviceToken:     deviceToken,
 		OperatorID:      "unknown",
-		FirmwareVersion: "version " + oxipayClient.GetVersion(),
+		FirmwareVersion: "version " + hummClient.GetVersion(),
 		POSVendor:       "Vend-Proxy",
 	}
 
@@ -484,7 +484,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func saveToSession(w http.ResponseWriter, r *http.Request, vReq *vend.PaymentRequest) {
 
-	session, err := getSession(r, "oxipay")
+	session, err := getSession(r, "humm")
 	if err != nil {
 		log.Error(err)
 	}
@@ -561,7 +561,7 @@ func RefundHandler(w http.ResponseWriter, r *http.Request) {
 	cxFields["merchant_id"] = register.FxlSellerID
 
 	txnRef, err := shortid.Generate()
-	var oxipayPayload = &oxipay.SalesAdjustmentPayload{
+	var hummPayload = &humm.SalesAdjustmentPayload{
 		Amount:            strings.Replace(vReq.Amount, "-", "", 1),
 		MerchantID:        register.FxlSellerID,
 		DeviceID:          register.FxlRegisterID,
@@ -572,32 +572,32 @@ func RefundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate the plaintext for the signature
-	plainText := oxipay.GeneratePlainTextSignature(oxipayPayload)
-	log.Infof("Oxipay plain text: %s \n", plainText)
+	plainText := humm.GeneratePlainTextSignature(hummPayload)
+	log.Infof("Humm plain text: %s \n", plainText)
 
 	// sign the message
-	oxipayPayload.Signature = oxipay.SignMessage(plainText, register.FxlDeviceSigningKey)
-	log.Infof("Oxipay signature: %s \n", oxipayPayload.Signature)
+	hummPayload.Signature = humm.SignMessage(plainText, register.FxlDeviceSigningKey)
+	log.Infof("Humm signature: %s \n", hummPayload.Signature)
 
-	// send authorisation to oxipay
-	oxipayResponse, err := oxipayClient.ProcessSalesAdjustment(oxipayPayload)
+	// send authorisation to humm
+	hummResponse, err := hummClient.ProcessSalesAdjustment(hummPayload)
 
 	if err != nil {
 		// log the raw response
-		log.Errorf("Error Processing: %s", oxipayResponse)
+		log.Errorf("Error Processing: %s", hummResponse)
 		return
 	}
 
-	// ensure the response has come from Oxipay
+	// ensure the response has come from Humm
 	var validSignature bool
-	validSignature, err = oxipayResponse.Authenticate(register.FxlDeviceSigningKey)
+	validSignature, err = hummResponse.Authenticate(register.FxlDeviceSigningKey)
 
 	if !validSignature || err != nil {
 		browserResponse.Message = "The signature does not match the expected signature"
 		browserResponse.HTTPStatus = http.StatusBadRequest
 	} else {
-		// Return a response to the browser bases on the response from Oxipay
-		browserResponse = processOxipayResponse(oxipayResponse, oxipay.Adjustment, oxipayPayload.Amount)
+		// Return a response to the browser bases on the response from Humm
+		browserResponse = processHummResponse(hummResponse, humm.Adjustment, hummPayload.Amount)
 		browserResponse.Amount = "0" // this is set because the payload
 	}
 
@@ -620,8 +620,8 @@ func PaymentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "There was a problem processing the request", http.StatusBadRequest)
 	}
 
-	// looks up the database to get the fake Oxipay terminal
-	// so that we can issue this against Oxipay
+	// looks up the database to get the fake Humm terminal
+	// so that we can issue this against Humm
 	// if the seller has correctly configured the gateway they will not hit this
 	// directly but it's here as safeguard
 	terminal, err := term.GetRegister(vReq.Origin, vReq.RegisterID)
@@ -630,11 +630,11 @@ func PaymentHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/register", http.StatusFound)
 		return
 	}
-	log.Infof("Processing Payment using Oxipay register %s ", terminal.FxlRegisterID)
+	log.Infof("Processing Payment using Humm register %s ", terminal.FxlRegisterID)
 
-	// send off to Oxipay
-	//var oxipayPayload
-	var oxipayPayload = &oxipay.AuthorisationPayload{
+	// send off to Humm
+	//var hummPayload
+	var hummPayload = &humm.AuthorisationPayload{
 		DeviceID:          terminal.FxlRegisterID,
 		MerchantID:        terminal.FxlSellerID,
 		PosTransactionRef: vReq.SaleID,
@@ -646,33 +646,33 @@ func PaymentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate the plaintext for the signature
-	plainText := oxipay.GeneratePlainTextSignature(oxipayPayload)
-	log.Debugf("Oxipay plain text: %s \n", plainText)
+	plainText := humm.GeneratePlainTextSignature(hummPayload)
+	log.Debugf("Humm plain text: %s \n", plainText)
 
 	// sign the message
-	oxipayPayload.Signature = oxipay.SignMessage(plainText, terminal.FxlDeviceSigningKey)
-	log.Debugf("Oxipay signature: %s \n", oxipayPayload.Signature)
+	hummPayload.Signature = humm.SignMessage(plainText, terminal.FxlDeviceSigningKey)
+	log.Debugf("Humm signature: %s \n", hummPayload.Signature)
 
-	// send authorisation to the Oxipay POS API
-	oxipayResponse, err := oxipayClient.ProcessAuthorisation(oxipayPayload)
+	// send authorisation to the Humm POS API
+	hummResponse, err := hummClient.ProcessAuthorisation(hummPayload)
 
 	if err != nil {
 		http.Error(w, "There was a problem processing the request", http.StatusInternalServerError)
 		// log the raw response
 
-		msg := fmt.Sprintf("Error Processing: %s", oxipayResponse)
+		msg := fmt.Sprintf("Error Processing: %s", hummResponse)
 		log.Error(msg)
 		return
 	}
 
-	// ensure the response has come from Oxipay
-	validSignature, err := oxipayResponse.Authenticate(terminal.FxlDeviceSigningKey)
+	// ensure the response has come from Humm
+	validSignature, err := hummResponse.Authenticate(terminal.FxlDeviceSigningKey)
 	if !validSignature || err != nil {
 		browserResponse.Message = "The signature does not match the expected signature"
 		browserResponse.HTTPStatus = http.StatusBadRequest
 	} else {
-		// Return a response to the browser bases on the response from Oxipay
-		browserResponse = processOxipayResponse(oxipayResponse, oxipay.Authorisation, oxipayPayload.PurchaseAmount)
+		// Return a response to the browser bases on the response from Humm
+		browserResponse = processHummResponse(hummResponse, humm.Authorisation, hummPayload.PurchaseAmount)
 	}
 
 	sendResponse(w, r, browserResponse)
@@ -731,7 +731,7 @@ func validPaymentRequest(req *vend.PaymentRequest) (*vend.PaymentRequest, error)
 		return req, err
 	}
 
-	// Oxipay deals with cents.
+	// Humm deals with cents.
 	// Probably not great that we are mutating the value directly
 	// If it gets problematic we can return a copy
 	req.Amount = strconv.FormatFloat((req.AmountFloat * 100), 'f', 0, 64)

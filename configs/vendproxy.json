@@ -19,8 +19,8 @@
     },
     "loglevel": "debug",
     "background": true,
-    "oxipay": {
-        "gatewayurl": "https://sandboxpos.oxipay.com.au/webapi/v1/"
+    "humm": {
+        "gatewayurl": "https://integration-pos.shophumm.co.nz/webapi/v1/"
 
     }
 }

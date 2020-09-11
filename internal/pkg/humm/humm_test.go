@@ -1,4 +1,4 @@
-package oxipay
+package humm
 
 import (
 	"encoding/json"
@@ -23,14 +23,14 @@ func TestProcessAuthorisationResponse(t *testing.T) {
 func TestGenerateSignature(t *testing.T) {
 
 	responsePayload := `{"x_key":"hEz3dnWwEWuo","x_status":"Success","x_code":"SCRK01","x_message":"Success","signature":"5385041e76753e1b6e7ac09d52c6363854f1df4e79a7aa01c44f2d4618063483","tracking_data":null}`
-	oxipayResponse := new(OxipayResponse)
+	hummResponse := new(HummResponse)
 
-	err := json.Unmarshal([]byte(responsePayload), oxipayResponse)
+	err := json.Unmarshal([]byte(responsePayload), hummResponse)
 	if err != nil {
 		t.Error("Unable to unmarshall response")
 	}
 
-	plainText := GeneratePlainTextSignature(oxipayResponse)
+	plainText := GeneratePlainTextSignature(hummResponse)
 	fmt.Println(plainText)
 	signature := SignMessage(plainText, "szUb4YwzQNXn")
 	fmt.Printf("Generated Signature: %s ", signature)
@@ -45,13 +45,13 @@ func TestGenerateSignature(t *testing.T) {
 func TestAuthenticate(t *testing.T) {
 
 	responsePayload := `{"x_key":"hEz3dnWwEWuo","x_status":"Success","x_code":"SCRK01","x_message":"Success","signature":"5385041e76753e1b6e7ac09d52c6363854f1df4e79a7aa01c44f2d4618063483","tracking_data":null}`
-	oxipayResponse := new(OxipayResponse)
+	hummResponse := new(HummResponse)
 
-	err := json.Unmarshal([]byte(responsePayload), oxipayResponse)
+	err := json.Unmarshal([]byte(responsePayload), hummResponse)
 	if err != nil {
 		t.Error("Unable to unmarshall response")
 	}
-	if oxipayResponse.Authenticate("szUb4YwzQNXn") == false {
+	if hummResponse.Authenticate("szUb4YwzQNXn") == false {
 		t.Error("Authenticate failed and should be true")
 	}
 }

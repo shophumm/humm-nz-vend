@@ -9,22 +9,6 @@ services:
      - 3306
     volumes:
       - vend-data:/var/lib/mysql
-  vendproxy_au:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      target: vendproxy
-      labels:
-        au.com.oxipay.vend.description: "Vend Application Proxy for Oxipay AU"
-        au.com.oxipay.vend.publisher: "FlexiGroup"
-    env_file: 
-      - ./vendproxy_au.env
-    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/oxipay-vend:latest
-    container_name: "proxy-vend-au"
-    depends_on:
-      - db
-    ports:
-      - 5000
 
   vendproxy_nz:
     build:
@@ -32,11 +16,11 @@ services:
       dockerfile: Dockerfile
       target: vendproxy
       labels:
-        au.com.oxipay.vend.description: "Vend Application Proxy for Oxipay NZ"
-        au.com.oxipay.vend.publisher: "FlexiGroup"
+        au.com.humm.vend.description: "Vend Application Proxy for Humm NZ"
+        au.com.humm.vend.publisher: "FlexiGroup"
     env_file: 
       - ./vendproxy_nz.env
-    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/oxipay-vend:latest
+    image: 092898705410.dkr.ecr.ap-southeast-2.amazonaws.com/humm-nz-vend:latest
     container_name: "proxy-vend-nz"
     depends_on:
       - db
@@ -47,8 +31,8 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: nginx
-    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-vend:latest
-    container_name: "nginx-vend"
+    image: 092898705410.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-nz-vend:latest
+    container_name: "nginx-nz-vend"
     env_file: 
       - ./nginx.env            
     ports:
@@ -58,24 +42,17 @@ services:
     # tty: true
     # stdin_open: true
     secrets: 
-      - wildcard.oxipay.com.au.key
-      - wildcard.oxipay.com.au.crt
-      - wildcard.oxipay.co.nz.key
-      - wildcard.oxipay.co.nz.crt
+      - wildcard.shophumm.co.nz.key
+      - wildcard.shophumm.co.nz.crt
     depends_on:
-      - vendproxy_au
       - vendproxy_nz
 
 volumes:
     vend-data:
 
 secrets:
-    wildcard.oxipay.com.au.key:
-      file: ./ssl/private/wildcard.oxipay.com.au.key
-    wildcard.oxipay.co.nz.key:
-      file: ./ssl/private/wildcard.oxipay.co.nz.key
-    wildcard.oxipay.com.au.crt:
-      file: ./ssl/certs/wildcard.oxipay.com.au.crt
-    wildcard.oxipay.co.nz.crt:
-      file: ./ssl/certs/wildcard.oxipay.co.nz.crt
+    wildcard.shophumm.co.nz.key:
+      file: ./ssl/private/wildcard.shophumm.co.nz.key
+    wildcard.shophumm.co.nz.crt:
+      file: ./ssl/certs/wildcard.shophumm.co.nz.crt
 

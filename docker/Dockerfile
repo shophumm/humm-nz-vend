@@ -1,24 +1,26 @@
 ### BUILD
 
 FROM ubuntu:latest as build-environment
+ENV TZ=Australia/Melbourne
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ENV CGO_ENABLED 0 
 ARG BUILD_HOME_DIR="/root"
-ARG PKG_BASE="${BUILD_HOME_DIR}/go/src/github.com/oxipay/"
+ARG PKG_BASE="${BUILD_HOME_DIR}/go/src/github.com/shophumm/"
 
 # install the OS build dependencies
-# ca-certificates is required to resolve https connections to Oxipay
+# ca-certificates is required to resolve https connections to Humm
 # golang-glide is a go dependency manager
 RUN apt-get update && apt-get install -y ssl-cert ca-certificates golang-glide golang git && apt-get clean 
 
-# Grab the oxipay vend proxy
+# Grab the humm vend proxy
 RUN mkdir -p ${PKG_BASE}
 
 WORKDIR ${PKG_BASE} 
-RUN git clone https://github.com/oxipay/oxipay-vend.git
+RUN git clone https://github.com/shophumm/humm-nz-vend.git
 
-WORKDIR ${BUILD_HOME_DIR}/go/src/github.com/oxipay/oxipay-vend/
-RUN glide up && go build ./cmd/vendproxy.go
+WORKDIR ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/
+RUN go build ./cmd/vendproxy.go
 
 
 
@@ -36,14 +38,14 @@ RUN apt-get update && apt-get install -y ssl-cert ca-certificates && apt-get cle
 
 RUN mkdir "${HOME_DIR}/bin"
 
-COPY --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/oxipay/oxipay-vend/configs/ /etc/vendproxy/
+COPY --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/configs/ /etc/vendproxy/
 WORKDIR "${HOME_DIR}"
 
 ## There is a bug https://github.com/moby/moby/issues/35018 
 ## which prevents ${USER} being used in COPY --chown
-COPY --chown=vendproxy:vendproxy --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/oxipay/oxipay-vend/vendproxy ${HOME_DIR}/bin/vendproxy
+COPY --chown=vendproxy:vendproxy --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/vendproxy ${HOME_DIR}/bin/vendproxy
 
-COPY --chown=vendproxy:vendproxy --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/oxipay/oxipay-vend/assets ${HOME_DIR}/assets
+COPY --chown=vendproxy:vendproxy --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/assets ${HOME_DIR}/assets
 USER ${USER}
 WORKDIR ${HOME_DIR}/bin
 CMD ["./vendproxy"]
@@ -74,7 +76,7 @@ COPY nginx-start.sh /usr/local/bin/nginx-start.sh
 
 RUN mkdir ${BASE_DIR} && useradd -mb ${BASE_DIR} -s /bin/bash ${USER}
 
-COPY --chown=vendproxy:www-data --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/oxipay/oxipay-vend/assets ${HOME_DIR}/assets
+COPY --chown=vendproxy:www-data --from=build-environment ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/assets ${HOME_DIR}/assets
 
 EXPOSE ${HTTP_PORT} ${TLS_PORT}
 CMD ["/usr/local/bin/nginx-start.sh"]

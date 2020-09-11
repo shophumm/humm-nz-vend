@@ -1,4 +1,4 @@
--- Verify vendproxy:oxipay_vend_map on mysql
+-- Verify vendproxy:humm_vend_map on mysql
 
 BEGIN;
 
