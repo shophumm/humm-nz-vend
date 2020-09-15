@@ -1,9 +1,9 @@
 create database vend;
 use vend;
 
-DROP TABLE IF EXISTS `humm_vend_map`;
+DROP TABLE IF EXISTS `oxipay_vend_map`;
 --
-create table humm_vend_map (
+create table oxipay_vend_map (
     id int NOT NULL  auto_increment,
     fxl_register_id varchar(255) NOT NULL COMMENT 'i.e humm Device ID',
     fxl_seller_id varchar(255) NOT NULL COMMENT 'i.e Merchant ID in humm',
@@ -19,7 +19,7 @@ create table humm_vend_map (
 ) engine=InnoDB;
 
 CREATE OR REPLACE UNIQUE INDEX unique_registration USING HASH
-ON humm_vend_map (vend_register_id, fxl_seller_id, origin_domain);
+ON oxipay_vend_map (vend_register_id, fxl_seller_id, origin_domain);
 
 -- insert test records
 

@@ -43,7 +43,7 @@ func NewRegister(key string, deviceID string, merchantID string, origin string, 
 //Save will save the terminal to the database
 func (t Terminal) Save(user string, register *Register) (bool, error) {
 	query := `INSERT INTO 
-		humm_vend_map  
+		oxipay_vend_map  
 		(
 			fxl_register_id,
 			fxl_seller_id,
@@ -87,7 +87,7 @@ func (t Terminal) GetRegister(originDomain string, vendRegisterID string) (*Regi
 			 origin_domain,
 			 vend_register_id
 			FROM 
-				humm_vend_map 
+				oxipay_vend_map 
 			WHERE 
 				origin_domain = ? 
 			AND

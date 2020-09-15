@@ -20,7 +20,7 @@ services:
         au.com.humm.vend.publisher: "FlexiGroup"
     env_file: 
       - ./vendproxy_nz.env
-    image: 092898705410.dkr.ecr.ap-southeast-2.amazonaws.com/humm-nz-vend:latest
+    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/humm-nz-vend:latest
     container_name: "proxy-vend-nz"
     depends_on:
       - db
@@ -31,8 +31,8 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: nginx
-    image: 092898705410.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-nz-vend:latest
-    container_name: "nginx-nz-vend"
+    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-vend:latest
+    container_name: "nginx-vend"
     env_file: 
       - ./nginx.env            
     ports:
@@ -55,4 +55,3 @@ secrets:
       file: ./ssl/private/wildcard.shophumm.co.nz.key
     wildcard.shophumm.co.nz.crt:
       file: ./ssl/certs/wildcard.shophumm.co.nz.crt
-
