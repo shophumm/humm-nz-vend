@@ -31,12 +31,12 @@ services:
       context: ./
       dockerfile: Dockerfile
       target: nginx
-    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-vend:latest
-    container_name: "nginx-vend"
+    image: 844996184919.dkr.ecr.ap-southeast-2.amazonaws.com/nginx-nz-vend:latest
+    container_name: "nginx-vend-nz"
     env_file: 
       - ./nginx.env            
     ports:
-      - "80:80"
+      - "8000:80"
       - "443:443"
     # entrypoint: ['/bin/sh']
     # tty: true
@@ -52,6 +52,6 @@ volumes:
 
 secrets:
     wildcard.shophumm.co.nz.key:
-      file: ./ssl/private/wildcard.shophumm.co.nz.key
+      file: ./ssl/private/vend.shophumm.co.nz-key.pem
     wildcard.shophumm.co.nz.crt:
-      file: ./ssl/certs/wildcard.shophumm.co.nz.crt
+      file: ./ssl/certs/vend.shophumm.co.nz.pem

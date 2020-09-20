@@ -462,6 +462,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	// register the device if needed
 	if err != nil {
+		log.Debugf("vReq %s", vReq)
 		saveToSession(w, r, vReq)
 
 		// redirect
