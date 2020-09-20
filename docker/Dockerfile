@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y ssl-cert ca-certificates golang-glide g
 RUN mkdir -p ${PKG_BASE}
 
 WORKDIR ${PKG_BASE} 
-RUN git clone -b humm-nz https://github.com/shophumm/humm-nz-vend.git
+RUN git clone -b sandbox-test https://github.com/shophumm/humm-nz-vend.git
 
 WORKDIR ${BUILD_HOME_DIR}/go/src/github.com/shophumm/humm-nz-vend/
 RUN go build ./cmd/vendproxy.go
