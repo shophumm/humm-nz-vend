@@ -492,7 +492,7 @@ func saveToSession(w http.ResponseWriter, r *http.Request, vReq *vend.PaymentReq
 	}
 
 	session.Values["vReq"] = vReq
-	err = sessions.Save(r, w)
+	err = session.Save(r, w)
 	log.Debugf("session: %s ", session)
 	if err != nil {
 		log.Error(err)
