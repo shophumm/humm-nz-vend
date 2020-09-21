@@ -11,7 +11,7 @@
 		"timeout":  "20s"
     }, 
     "session": {
-        "domain":   "shophumm", 
+        "domain":   "shophumm.co.nz",
 		"path":     "/",
 		"maxage":   3600,
         "httponly": true,

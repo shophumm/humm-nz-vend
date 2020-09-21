@@ -216,7 +216,7 @@ func getPaymentRequestFromSession(r *http.Request) (*vend.PaymentRequest, error)
 	var session *sessions.Session
 
 	vendPaymentRequest := &vend.PaymentRequest{}
-	session, err = getSession(r, "shophumm")
+	session, err = getSession(r, "humm")
 	log.Debugf("session %s", session)
 	if err != nil {
 		log.Println(err.Error())
@@ -488,13 +488,14 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func saveToSession(w http.ResponseWriter, r *http.Request, vReq *vend.PaymentRequest) {
 
-	session, err := getSession(r, "shophumm")
+	session, err := getSession(r, "humm")
 	if err != nil {
 		log.Error(err)
 	}
 
 	session.Values["vReq"] = vReq
 	err = sessions.Save(r, w)
+	log.Debugf("sessions: %s ", session)
 	log.Debugf("session: %s ", session)
 	if err != nil {
 		log.Error(err)
