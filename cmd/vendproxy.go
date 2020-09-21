@@ -226,6 +226,8 @@ func getPaymentRequestFromSession(r *http.Request) (*vend.PaymentRequest, error)
 
 	// get the vendRequest from the session
 	vReq := session.Values["vReq"]
+	log.Debugf("session vReq: %s", vReq)
+
 	vendPaymentRequest, ok := vReq.(*vend.PaymentRequest)
 
 	if !ok {
@@ -492,7 +494,7 @@ func saveToSession(w http.ResponseWriter, r *http.Request, vReq *vend.PaymentReq
 	}
 
 	session.Values["vReq"] = vReq
-	err = session.Save(r, w)
+	err = sessions.Save(r, w)
 	log.Debugf("session: %s ", session)
 	if err != nil {
 		log.Error(err)
