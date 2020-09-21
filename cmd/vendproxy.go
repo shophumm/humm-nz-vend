@@ -217,6 +217,7 @@ func getPaymentRequestFromSession(r *http.Request) (*vend.PaymentRequest, error)
 
 	vendPaymentRequest := &vend.PaymentRequest{}
 	session, err = getSession(r, "humm")
+	log.Debugf("session %s", session)
 	if err != nil {
 		log.Println(err.Error())
 		_ = session
