@@ -29,3 +29,8 @@ vendor/*
 vendproxy
 debug
 docker/ssl/*
+docker/mariadb.env
+docker/nginx.env
+docker/vendproxy_nz.env
+
+go.sum

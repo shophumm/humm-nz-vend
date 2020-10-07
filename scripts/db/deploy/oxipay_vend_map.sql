@@ -1,4 +1,4 @@
--- Deploy vendproxy:oxipay_vend_map to mysql
+-- Deploy vendproxy:humm_vend_map to mysql
 
 BEGIN;
 

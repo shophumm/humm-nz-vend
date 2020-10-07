@@ -7,7 +7,7 @@ import (
 
 // Terminal terminal mapping
 type Register struct {
-	FxlRegisterID       string // Oxipay registerid
+	FxlRegisterID       string // Humm registerid
 	FxlSellerID         string
 	FxlDeviceSigningKey string
 	Origin              string
@@ -34,7 +34,7 @@ func NewRegister(key string, deviceID string, merchantID string, origin string, 
 	return &Register{
 		FxlDeviceSigningKey: key,
 		FxlRegisterID:       deviceID,
-		FxlSellerID:         merchantID, // Oxipay Merchant No
+		FxlSellerID:         merchantID, // Humm Merchant No
 		Origin:              origin,     // Vend Website
 		VendRegisterID:      registerID, // Vend Register ID
 	}

@@ -1,4 +1,4 @@
-package oxipay
+package humm
 
 import (
 	"bytes"
@@ -24,30 +24,30 @@ const HTTPClientTimout = 0
 
 const defaultResponseCode = "EISE01"
 
-// Client exposes an interface to Oxipay
+// Client exposes an interface to Humm
 type Client interface {
 	RegisterPosDevice(*RegistrationPayload) (*Response, error)
-	ProcessAuthorisation(oxipayPayload *AuthorisationPayload) (*Response, error)
+	ProcessAuthorisation(hummPayload *AuthorisationPayload) (*Response, error)
 	ProcessSalesAdjustment(adjustment *SalesAdjustmentPayload) (*Response, error)
 	GetVersion() string
 }
 
-type oxipay struct {
+type humm struct {
 	GatewayURL string
 	Version    string
 	Log        *log.Logger
 }
 
-//NewOxipay returns a base struct on which all other functions operate
-func NewOxipay(gatewayURL string, version string, log *log.Logger) Client {
-	return &oxipay{
+//NewHumm returns a base struct on which all other functions operate
+func NewHumm(gatewayURL string, version string, log *log.Logger) Client {
+	return &humm{
 		GatewayURL: gatewayURL,
 		Version:    version,
 		Log:        log,
 	}
 }
 
-// RegistrationPayload required to register a device with Oxipay
+// RegistrationPayload required to register a device with Humm
 type RegistrationPayload struct {
 	MerchantID      string `json:"x_merchant_id"`
 	DeviceID        string `json:"x_device_id"`
@@ -59,7 +59,7 @@ type RegistrationPayload struct {
 	Signature       string `json:"signature"`
 }
 
-// AuthorisationPayload Payload used to send to Oxipay
+// AuthorisationPayload Payload used to send to Humm
 type AuthorisationPayload struct {
 	MerchantID        string `json:"x_merchant_id"`
 	DeviceID          string `json:"x_device_id"`
@@ -72,7 +72,7 @@ type AuthorisationPayload struct {
 	Signature         string `json:"signature"`
 }
 
-// Response is the response returned from Oxipay for both a CreateKey and Sales Adjustment
+// Response is the response returned from Humm for both a CreateKey and Sales Adjustment
 type Response struct {
 	PurchaseNumber string `json:"x_purchase_number,omitempty"`
 	Status         string `json:"x_status,omitempty"`
@@ -82,7 +82,7 @@ type Response struct {
 	Signature      string `json:"signature"`
 }
 
-// SalesAdjustmentPayload holds a request to Oxipay for the ProcessAdjustment
+// SalesAdjustmentPayload holds a request to Humm for the ProcessAdjustment
 type SalesAdjustmentPayload struct {
 	PosTransactionRef string `json:"x_pos_transaction_ref"`
 	PurchaseRef       string `json:"x_purchase_ref"`
@@ -95,7 +95,7 @@ type SalesAdjustmentPayload struct {
 	Signature         string `json:"signature"`
 }
 
-// ResponseCode maps the oxipay response code to a generic ACCEPT/DECLINE
+// ResponseCode maps the humm response code to a generic ACCEPT/DECLINE
 type ResponseCode struct {
 	TxnStatus       string
 	LogMessage      string
@@ -111,7 +111,7 @@ const (
 	StatusFailed = "FAILED"
 )
 
-// ResponseType The type of response received from Oxipay
+// ResponseType The type of response received from Humm
 type ResponseType int
 
 const (
@@ -128,14 +128,14 @@ func Ping() string {
 	return "pong"
 }
 
-func (oc *oxipay) GetVersion() string {
+func (oc *humm) GetVersion() string {
 	return oc.Version
 }
 
 // RegisterPosDevice is used to register a new vend terminal
-func (oc *oxipay) RegisterPosDevice(payload *RegistrationPayload) (*Response, error) {
+func (oc *humm) RegisterPosDevice(payload *RegistrationPayload) (*Response, error) {
 	contextLogger := oc.Log.WithFields(log.Fields{
-		"module":    "oxipay",
+		"module":    "humm",
 		"call":      "RegisterPosDevice",
 		"device_id": payload.DeviceID,
 	})
@@ -145,9 +145,9 @@ func (oc *oxipay) RegisterPosDevice(payload *RegistrationPayload) (*Response, er
 }
 
 // ProcessAuthorisation calls the ProcessAuthorisation Method
-func (oc *oxipay) ProcessAuthorisation(payload *AuthorisationPayload) (*Response, error) {
+func (oc *humm) ProcessAuthorisation(payload *AuthorisationPayload) (*Response, error) {
 	contextLogger := oc.Log.WithFields(log.Fields{
-		"module":      "oxipay",
+		"module":      "humm",
 		"call":        "ProcessAuthorisation",
 		"device_id":   payload.DeviceID,
 		"merchant_id": payload.MerchantID,
@@ -160,7 +160,7 @@ func (oc *oxipay) ProcessAuthorisation(payload *AuthorisationPayload) (*Response
 func post(url string, jsonValue []byte, contextLogger *logrus.Entry) (*Response, error) {
 
 	var err error
-	oxipayResponse := new(Response)
+	hummResponse := new(Response)
 
 	contextLogger.Debugf("POST to : %s , %s \n", url, string(jsonValue))
 
@@ -169,7 +169,7 @@ func post(url string, jsonValue []byte, contextLogger *logrus.Entry) (*Response,
 	response, responseErr := client.Post(url, "application/json", bytes.NewBuffer(jsonValue))
 
 	if responseErr != nil {
-		return oxipayResponse, responseErr
+		return hummResponse, responseErr
 	}
 	defer response.Body.Close()
 
@@ -182,18 +182,18 @@ func post(url string, jsonValue []byte, contextLogger *logrus.Entry) (*Response,
 	body, _ := ioutil.ReadAll(response.Body)
 	contextLogger.Debugf("Response Body: \n %s", string(body))
 
-	err = json.Unmarshal(body, oxipayResponse)
+	err = json.Unmarshal(body, hummResponse)
 
-	contextLogger.Debugf("Unmarshalled Oxipay Response Body: %v \n", oxipayResponse)
+	contextLogger.Debugf("Unmarshalled Humm Response Body: %v \n", hummResponse)
 
-	return oxipayResponse, err
+	return hummResponse, err
 }
 
-// ProcessSalesAdjustment provides a mechansim to perform a sales ajustment on an Oxipay schedule
-func (oc *oxipay) ProcessSalesAdjustment(adjustment *SalesAdjustmentPayload) (*Response, error) {
+// ProcessSalesAdjustment provides a mechansim to perform a sales ajustment on an Humm schedule
+func (oc *humm) ProcessSalesAdjustment(adjustment *SalesAdjustmentPayload) (*Response, error) {
 
 	contextLogger := oc.Log.WithFields(log.Fields{
-		"module":      "oxipay",
+		"module":      "humm",
 		"call":        "ProcessSalesAdjustment",
 		"device_id":   adjustment.DeviceID,
 		"merchant_id": adjustment.MerchantID,
@@ -213,7 +213,7 @@ func SignMessage(plainText string, signingKey string) string {
 	return macString
 }
 
-// Validate will perform validation on a OxipayRegistrationPayload
+// Validate will perform validation on a HummRegistrationPayload
 func (payload *RegistrationPayload) Validate() error {
 	// @todo more validation here
 	if payload == nil {
@@ -232,7 +232,7 @@ func (r *Response) Authenticate(key string) (bool, error) {
 	return false, errors.New("Plaintext is signature is 0 length")
 }
 
-// GeneratePlainTextSignature will generate an Oxipay plain text message ready for signing
+// GeneratePlainTextSignature will generate an Humm plain text message ready for signing
 func GeneratePlainTextSignature(payload interface{}) string {
 
 	var buffer bytes.Buffer
@@ -294,7 +294,7 @@ func CheckMAC(message []byte, messageMAC []byte, key []byte) (bool, error) {
 	return isGood, err
 }
 
-// ProcessRegistrationResponse provides a function to map an Oxipay CreateKey response to something we can pass back to the client
+// ProcessRegistrationResponse provides a function to map an Humm CreateKey response to something we can pass back to the client
 func ProcessRegistrationResponse() func(string) *ResponseCode {
 	innerMap := map[string]*ResponseCode{
 		"SCRK01": &ResponseCode{
@@ -315,19 +315,19 @@ func ProcessRegistrationResponse() func(string) *ResponseCode {
 		"EVAL01": &ResponseCode{
 			TxnStatus:  StatusFailed,
 			LogMessage: "Request is invalid",
-			CustomerMessage: `The request to Oxipay was invalid. 
+			CustomerMessage: `The request to Humm was invalid. 
 			You can try again with a different Payment Code. 
-			Please contact pit@oxipay.com.au for further support`,
+			Please contact pit@shophumm.co.nz for further support`,
 		},
 		"ESIG01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Signature mismatch error. Has the terminal changed, try removing the key for the device? ",
-			CustomerMessage: `Please contact pit@oxipay.com.au for further support`,
+			CustomerMessage: `Please contact pit@shophumm.co.nz for further support`,
 		},
 		"EISE01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Server Error",
-			CustomerMessage: "Please contact pit@oxipay.com.au for further support",
+			CustomerMessage: "Please contact pit@shophumm.co.nz for further support",
 		},
 	}
 
@@ -342,7 +342,7 @@ func ProcessRegistrationResponse() func(string) *ResponseCode {
 	}
 }
 
-// ProcessAuthorisationResponses provides a guarded response type based on the response code from the Oxipay request
+// ProcessAuthorisationResponses provides a guarded response type based on the response code from the Humm request
 func ProcessAuthorisationResponses() func(string) *ResponseCode {
 
 	innerMap := map[string]*ResponseCode{
@@ -369,12 +369,12 @@ func ProcessAuthorisationResponses() func(string) *ResponseCode {
 		"FPRA04": &ResponseCode{
 			TxnStatus:       StatusDeclined,
 			LogMessage:      "Declined because the customer limit has been exceeded",
-			CustomerMessage: "Please contact Oxipay customer support",
+			CustomerMessage: "Please contact Humm customer support",
 		},
 		"FPRA05": &ResponseCode{
 			TxnStatus:       StatusDeclined,
 			LogMessage:      "Declined due to negative payment history for the customer",
-			CustomerMessage: "Please contact Oxipay customer support for more information",
+			CustomerMessage: "Please contact Humm customer support for more information",
 		},
 		"FPRA06": &ResponseCode{
 			TxnStatus:       StatusDeclined,
@@ -394,7 +394,7 @@ func ProcessAuthorisationResponses() func(string) *ResponseCode {
 		"FPRA09": &ResponseCode{
 			TxnStatus:       StatusDeclined,
 			LogMessage:      "Declined because purchase amount exceeded pre-approved amount",
-			CustomerMessage: "Please contact Oxipay customer support",
+			CustomerMessage: "Please contact Humm customer support",
 		},
 		"FPRA21": &ResponseCode{
 			TxnStatus:       StatusDeclined,
@@ -419,25 +419,25 @@ func ProcessAuthorisationResponses() func(string) *ResponseCode {
 		},
 		"FPRA99": &ResponseCode{
 			TxnStatus:       StatusDeclined,
-			LogMessage:      "DECLINED by Oxipay Gateway",
-			CustomerMessage: "Transaction has been declined by the Oxipay Gateway",
+			LogMessage:      "DECLINED by Humm Gateway",
+			CustomerMessage: "Transaction has been declined by the Humm Gateway",
 		},
 		"EVAL02": &ResponseCode{
 			TxnStatus:  StatusFailed,
 			LogMessage: "Request is invalid",
-			CustomerMessage: `The request to Oxipay was invalid. 
+			CustomerMessage: `The request to Humm was invalid. 
 			You can try again with a different Payment Code. 
-			Please contact pit@oxipay.com.au for further support`,
+			Please contact pit@shophumm.co.nz for further support`,
 		},
 		"ESIG01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Signature mismatch error. Has the terminal changed, try removing the key for the device? ",
-			CustomerMessage: `Please contact pit@oxipay.com.au for further support`,
+			CustomerMessage: `Please contact pit@shophumm.co.nz for further support`,
 		},
 		"EISE01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Server Error",
-			CustomerMessage: `Please contact pit@oxipay.com.au for further support`,
+			CustomerMessage: `Please contact pit@shophumm.co.nz for further support`,
 		},
 	}
 
@@ -452,7 +452,7 @@ func ProcessAuthorisationResponses() func(string) *ResponseCode {
 	}
 }
 
-// ProcessSalesAdjustmentResponse provides a guarded response type based on the response code from the Oxipay request
+// ProcessSalesAdjustmentResponse provides a guarded response type based on the response code from the Humm request
 func ProcessSalesAdjustmentResponse() func(string) *ResponseCode {
 
 	innerMap := map[string]*ResponseCode{
@@ -473,8 +473,8 @@ func ProcessSalesAdjustmentResponse() func(string) *ResponseCode {
 		},
 		"FPSA03": &ResponseCode{
 			TxnStatus:       StatusFailed,
-			LogMessage:      "This Oxipay contract has previously been cancelled and all payments collected have been refunded to the customer",
-			CustomerMessage: "This Oxipay contract has previously been cancelled and all payments collected have been refunded to the customer",
+			LogMessage:      "This Humm contract has previously been cancelled and all payments collected have been refunded to the customer",
+			CustomerMessage: "This Humm contract has previously been cancelled and all payments collected have been refunded to the customer",
 		},
 		"FPSA04": &ResponseCode{
 			TxnStatus:       StatusFailed,
@@ -488,8 +488,8 @@ func ProcessSalesAdjustmentResponse() func(string) *ResponseCode {
 		},
 		"FPSA06": &ResponseCode{
 			TxnStatus:       StatusFailed,
-			LogMessage:      "Sales adjustment cannot be processed. Please call Oxipay Collections",
-			CustomerMessage: "Sales adjustment cannot be processed. Please call Oxipay Collections",
+			LogMessage:      "Sales adjustment cannot be processed. Please call Humm Collections",
+			CustomerMessage: "Sales adjustment cannot be processed. Please call Humm Collections",
 		},
 		"FPSA07": &ResponseCode{
 			TxnStatus:       StatusFailed,
@@ -509,26 +509,26 @@ func ProcessSalesAdjustmentResponse() func(string) *ResponseCode {
 		"EAUT01": &ResponseCode{
 			TxnStatus:  StatusFailed,
 			LogMessage: "Authentication to gateway error",
-			CustomerMessage: `The request to Oxipay was not what we were expecting. 
+			CustomerMessage: `The request to Humm was not what we were expecting. 
 			You can try again with a different Payment Code. 
-			Please contact pit@oxipay.com.au for further support`,
+			Please contact pit@shophumm.co.nz for further support`,
 		},
 		"EVAL01": &ResponseCode{
 			TxnStatus:  StatusFailed,
 			LogMessage: "Request is invalid",
-			CustomerMessage: `The request to Oxipay was what we were expecting. 
+			CustomerMessage: `The request to Humm was what we were expecting. 
 			You can try again with a different Payment Code. 
-			Please contact pit@oxipay.com.au for further support`,
+			Please contact pit@shophumm.co.nz for further support`,
 		},
 		"ESIG01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Signature mismatch error. Has the terminal changed, try removing the key for the device? ",
-			CustomerMessage: `Please contact pit@oxipay.com.au for further support`,
+			CustomerMessage: `Please contact pit@shophumm.co.nz for further support`,
 		},
 		"EISE01": &ResponseCode{
 			TxnStatus:       StatusFailed,
 			LogMessage:      "Server Error",
-			CustomerMessage: `Please contact pit@oxipay.com.au for further support`,
+			CustomerMessage: `Please contact pit@shophumm.co.nz for further support`,
 		},
 	}
 

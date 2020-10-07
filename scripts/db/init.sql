@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS `oxipay_vend_map`;
 --
 create table oxipay_vend_map (
     id int NOT NULL  auto_increment,
-    fxl_register_id varchar(255) NOT NULL COMMENT 'i.e oxipay/ezi-pay Device ID',
-    fxl_seller_id varchar(255) NOT NULL COMMENT 'i.e Merchant ID in oxipay/ezi-pay',
+    fxl_register_id varchar(255) NOT NULL COMMENT 'i.e humm Device ID',
+    fxl_seller_id varchar(255) NOT NULL COMMENT 'i.e Merchant ID in humm',
     fxl_device_signing_key varchar(255) COMMENT 'i.e Device specific signing key allocated by CreateKey',
     origin_domain varchar(255) NOT NULL COMMENT 'Vend origin provided in the initial request',
     vend_register_id varchar(255) NOT NULL COMMENT 'Unique Register ID from Vend',
@@ -23,7 +23,7 @@ ON oxipay_vend_map (vend_register_id, fxl_seller_id, origin_domain);
 
 -- insert test records
 
--- INSERT INTO oxipay_vend_map (
+-- INSERT INTO humm_vend_map (
 --     fxl_register_id,
 --     fxl_seller_id,
 --     fxl_device_signing_key, 
@@ -34,7 +34,7 @@ ON oxipay_vend_map (vend_register_id, fxl_seller_id, origin_domain);
 --     'Oxipos',
 --     '30188105',
 --     'JCjbPGtuniWr',
---     'https://sandbox.oxipay.com.au',
+--     'https://sandbox.humm.com.au',
 --     '57d863b4-4ae0-492c-b44a-326db76f7dac',
 --     'andrewm'
 -- );

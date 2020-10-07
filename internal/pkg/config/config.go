@@ -3,9 +3,9 @@ package config
 import (
 	"fmt"
 
-	micro "github.com/micro/go-config"
-	"github.com/micro/go-config/source/env"
-	"github.com/micro/go-config/source/file"
+	micro "github.com/micro/go-micro/config"
+	"github.com/micro/go-micro/config/source/env"
+	"github.com/micro/go-micro/config/source/file"
 )
 
 // WebserverConfig configuration for the webserver
@@ -38,13 +38,13 @@ type HostConfig struct {
 	Webserver  WebserverConfig `json:"webserver"`
 	Database   DbConnection    `json:"database"`
 	Session    SessionConfig   `json:"session"`
-	Oxipay     OxipayConfig    `json:"oxipay"`
+	Humm       HummConfig      `json:"humm"`
 	Background bool            `json:"background"`
 	LogLevel   string          `json:"loglevel"`
 }
 
-// OxipayConfig data structure that represents a valid Oxipay configuration file entry
-type OxipayConfig struct {
+// HummConfig data structure that represents a valid Humm configuration file entry
+type HummConfig struct {
 	GatewayURL string `json:"gatewayurl"`
 	Version    string
 }
@@ -74,7 +74,7 @@ func ReadApplicationConfig(configFile string) (HostConfig, error) {
 
 	// hardcode this for now
 	// should load from a non-config file
-	hostConfiguration.Oxipay.Version = "1.1"
+	hostConfiguration.Humm.Version = "1.1"
 
 	return hostConfiguration, err
 }

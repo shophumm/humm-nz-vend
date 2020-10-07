@@ -1,4 +1,4 @@
--- Revert vendproxy:oxipay_vend_map from mysql
+-- Revert vendproxy:humm_vend_map from mysql
 
 BEGIN;
 
